@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import json
+import numpy
 from types import SimpleNamespace
+import subprocess
 class Empty(SimpleNamespace):
     def __getattr__(self, name):
         setattr(self, name, Empty())
@@ -39,8 +41,18 @@ class tudatConfig(Empty):
         self.export =[Empty(file = "@path(stateHistory.txt)", variables = [ Empty(type="state") ])]
 
         self.options.fullSettingsFile = "@path(fullSettings.json)"
+def save(config: tudatConfig):
+        serialized = json.dumps(config, indent=2, default=lambda o: o.__dict__)
+        with open("main.json", mode='w') as f:
+            f.write(serialized)
+def run(config: tudatConfig):
+    save(config)
+    a = subprocess.run(["../tudatBundle/tudat/bin/json_interface", "main.json"])
+    assert(a.returncode==0)
+    return numpy.loadtxt("stateHistory.txt")
+
 
 a = tudatConfig("Asterix", 86400, OrbitalElements(7.5E6,0.1,1.4888,4.1137,0.4084,2.4412))
-b = json.dumps(a, indent=2, default=lambda o: o.__dict__)
-print(b)
+results = run(a)
+print(results)
 
