@@ -18,7 +18,7 @@ class OrbitalElements:
         self.trueAnomaly=trueAnomaly
 
 class tudatConfig(Empty):
-    def __init__(self, sateliteName: str, finalEpoch : int, intialPosition: OrbitalElements):
+    def __init__(self, sateliteName: str, finalEpoch : int, initialPosition: OrbitalElements):
         self.initialEpoch = 0
         self.finalEpoch = finalEpoch
 
@@ -28,13 +28,17 @@ class tudatConfig(Empty):
         self.spice.preloadEphemeris = False
 
         self.bodies.Earth.useDefaultSettings = True
-        getattr(self.bodies, sateliteName).initialState  = intialPosition
+        getattr(self.bodies, sateliteName).initialState  = initialPosition
+        getattr(self.bodies, sateliteName).rotationalState = [0.1]*7
 
         self.propagators = [] 
         self.propagators.append(Empty(integratedStateType = "translational",
                                       centralBodies = ["Earth"],
                                       bodiesToPropagate = [sateliteName]))
         getattr(self.propagators[0].accelerations, sateliteName).Earth = [Empty(type="pointMassGravity")]
+        self.propagators.append(Empty(integratedStateType = "rotational",
+                                      bodiesToPropagate = [sateliteName]))
+        getattr(self.propagators[1].torques, sateliteName).Earth = [Empty(type="secondOrderGravitational")]
         self.integrator.type = "rungeKutta4"
         self.integrator.stepSize = 10
 
@@ -52,7 +56,7 @@ def run(config: tudatConfig):
     return numpy.loadtxt("stateHistory.txt")
 
 
-a = tudatConfig("Asterix", 86400, OrbitalElements(7.5E6,0.1,1.4888,4.1137,0.4084,2.4412))
+a = tudatConfig("Asterix", 10, OrbitalElements(7.5E6,0.1,1.4888,4.1137,0.4084,2.4412))
 results = run(a)
 print(results)
 
