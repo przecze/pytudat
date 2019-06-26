@@ -3,6 +3,7 @@ import json
 import numpy
 from types import SimpleNamespace
 import subprocess
+import pandas as pd
 class Empty(SimpleNamespace):
     def __getattr__(self, name):
         setattr(self, name, Empty())
@@ -49,10 +50,5 @@ def run(config: tudatConfig):
     save(config)
     a = subprocess.run(["../tudatBundle/tudat/bin/json_interface", "main.json"])
     assert(a.returncode==0)
-    return numpy.loadtxt("stateHistory.txt")
-
-
-a = tudatConfig("Asterix", 86400, OrbitalElements(7.5E6,0.1,1.4888,4.1137,0.4084,2.4412))
-results = run(a)
-print(results)
-
+    data = numpy.loadtxt("stateHistory.txt")
+    return pd.DataFrame(data = data[:,1:], index = data[:,0], columns = ["p_x", "p_y", "p_z", "v_x", "v_y", "v_z"])
